@@ -1,4 +1,4 @@
-name: Verify guides
+name: Sample apps
 on:
   workflow_dispatch:   
   #schedule: 
@@ -7,8 +7,21 @@ on:
   # branches: [ master ]
 
 jobs:
-  verify_guides:
+  build:
     runs-on: ubuntu-latest
+    name: Some name
     steps:
-      - uses: actions/checkout@v4
-      - run: echo Hello world!
+      - name: Check out repo
+        uses: actions/checkout@v4
+        
+      - name: Install dependencies
+        run: |
+          dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+          dnf -y install docker-ce protobuf-compiler protobuf-devel python3 python3-pip python3-devel --nobest
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --ignore-installed -qqq -r test/requirements.txt --user
+          python3 -m pip install --upgrade -qqq pytest nbmake onnx onnxruntime torch numpy transformers
+          python3 -m pip install --upgrade -qqq pytest nbmake onnx onnxruntime torch numpy transformers --user
+          VESPA_CLI_VERSION=$(curl -fsSL https://api.github.com/repos/vespa-engine/vespa/releases/latest | grep -Po '"tag_name": "v\K.*?(?=")') && \
+            curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64.tar.gz | tar -zxf - -C /opt && \
+            ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
